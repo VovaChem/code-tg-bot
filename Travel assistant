@@ -1,0 +1,71 @@
+import logging
+import wikipediaapi
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+
+# Your Telegram bot token from BotFather
+TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+
+# Set up logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+# Wikipedia API
+wiki_wiki = wikipediaapi.Wikipedia('en')
+
+# Command handler for /start
+def start(update: Update, _: CallbackContext) -> None:
+    user = update.effective_user
+    update.message.reply_text(f'Hello, {user.mention_html()}! I am your Travel Assistant. '
+                              f'Use /places to find places to visit, /tips for travel tips, '
+                              f'and /info <city> for information about a specific city.')
+
+# Command handler for /places
+def places(update: Update, _: CallbackContext) -> None:
+    # Add logic to fetch and send a list of places to visit
+    update.message.reply_text('Here are some amazing places to visit during your travel!')
+
+# Command handler for /tips
+def tips(update: Update, _: CallbackContext) -> None:
+    # Add logic to fetch and send travel tips
+    update.message.reply_text('Here are some travel tips to make your journey memorable!')
+
+# Command handler for /info <city>
+def city_info(update: Update, _: CallbackContext) -> None:
+    city = ' '.join(_.args)
+    if not city:
+        update.message.reply_text('Please provide a city name after the /info command.')
+        return
+
+    page = wiki_wiki.page(city)
+    if not page.exists():
+        update.message.reply_text('Sorry, I couldn\'t find information about that city.')
+    else:
+        update.message.reply_text(page.summary)
+
+# Echo handler to handle non-command messages
+def echo(update: Update, _: CallbackContext) -> None:
+    update.message.reply_text("I'm a Travel Assistant. Please use the available commands to get travel-related information.")
+
+def main() -> None:
+    updater = Updater(TOKEN)
+
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
+
+    # Register command handlers
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("places", places))
+    dp.add_handler(CommandHandler("tips", tips))
+    dp.add_handler(CommandHandler("info", city_info))
+    
+    # Register an echo handler for non-command messages
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until the user presses Ctrl-C
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
